@@ -1,0 +1,1 @@
+Proyecto personal creado para práctica de scrapping de datos en paginas web dedicadas a la venta de hardware en Costa Rica 
