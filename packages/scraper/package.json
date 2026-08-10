@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "scrape:ram": "tsx src/index.ts ram"
+    "scrape:ram": "tsx src/index.ts ram",
+    "check:ram-extractor": "tsx src/extractors/ram.selfcheck.ts",
+    "check:product-parser": "tsx src/scrapers/faithtechnology/parse-product.selfcheck.ts",
+    "check:category-fetch": "tsx src/lib/fetch-html.selfcheck.ts"
   },
   "dependencies": {
     "@hardware-scrapping/database": "workspace:*",

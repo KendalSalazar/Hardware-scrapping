@@ -1,6 +1,6 @@
 # hardware-scrapping
 
-Comparador de precios de hardware (piloto: RAM en ExtremeTech CR).
+Comparador de precios de hardware (piloto: RAM en Faith Technology CR).
 
 ## Requisitos
 

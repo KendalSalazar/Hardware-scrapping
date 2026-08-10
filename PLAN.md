@@ -1,7 +1,7 @@
 # PLAN.md — Fase 0 y Fase 1
 
 Especificación técnica ejecutable para el monorepo **hardware-scrapping**.
-Cubre **únicamente** Fase 0 (scaffolding) y Fase 1 (scraper de RAM en ExtremeTech CR).
+Cubre **únicamente** Fase 0 (scaffolding) y Fase 1 (scraper de RAM en Faith Technology CR).
 No incluye frontend Next.js, cron, ni auth funcional (eso es fases futuras).
 
 **Audiencia:** quien ejecuta este plan tiene experiencia en C#/.NET y es nuevo en Node/TypeScript. Cada archivo de configuración se muestra completo; no hay `...` ni resúmenes.
@@ -24,7 +24,7 @@ No incluye frontend Next.js, cron, ni auth funcional (eso es fases futuras).
 | Item | Valor |
 |------|--------|
 | Nombre del monorepo / `package.json` root `name` | `hardware-scrapping` |
-| Objetivo Fase 0–1 | Scrapear RAM de https://extremetechcr.com, guardar en Postgres, dejar base lista para API |
+| Objetivo Fase 0–1 | Scrapear RAM de https://faithtechnologycr.com, guardar en Postgres, dejar base lista para API |
 | Package manager | pnpm workspaces |
 | Node | LTS 24 (`.nvmrc` → `24`; verificada en entorno: 24.16.0) |
 | ORM | Prisma en `packages/database` |
@@ -342,7 +342,7 @@ Contenido completo:
 ```markdown
 # hardware-scrapping
 
-Comparador de precios de hardware (piloto: RAM en ExtremeTech CR).
+Comparador de precios de hardware (piloto: RAM en Faith Technology CR).
 
 ## Requisitos
 
@@ -981,7 +981,7 @@ app.listen(port, () => {
 
 ### Tarea 0.7 — Paquete `packages/scraper` (esqueleto sin scrape real)
 
-**Descripción:** En Fase 0 solo estructura, logger, load-env y un `index.ts` placeholder. La lógica de ExtremeTech es Fase 1.
+**Descripción:** En Fase 0 solo estructura, logger, load-env y un `index.ts` placeholder. La lógica de Faith Technology es Fase 1.
 
 #### 0.7.1 — `packages/scraper/package.json`
 
@@ -1045,7 +1045,7 @@ packages/scraper/
     │   ├── ram.ts
     │   └── index.ts               ← EXTRACTORS registry
     ├── scrapers/
-    │   └── extremetech/
+    │   └── faithtechnology/
     │       ├── constants.ts
     │       ├── discover.ts
     │       ├── parse-product.ts
@@ -1142,9 +1142,9 @@ pnpm --filter @hardware-scrapping/scraper scrape:ram
 
 ---
 
-# Fase 1 — Scraper funcional de RAM (ExtremeTech CR)
+# Fase 1 — Scraper funcional de RAM (Faith Technology CR)
 
-**Objetivo:** correr manualmente un scrape de productos RAM de ExtremeTech, persistir Product / Store / StoreListing / PriceHistory / ScrapeRun con datos reales.
+**Objetivo:** correr manualmente un scrape de productos RAM de Faith Technology, persistir Product / Store / StoreListing / PriceHistory / ScrapeRun con datos reales.
 
 **No incluye:** cron, frontend, endpoints de catálogo, auth.
 
@@ -1152,17 +1152,15 @@ pnpm --filter @hardware-scrapping/scraper scrape:ram
 
 ### Tarea 1.1 — Inspección manual del sitio (OBLIGATORIA antes de codear selectores)
 
-**Descripción:** ExtremeTech CR es WooCommerce SSR; el HTML de producto viene en el server response (cheerio es adecuado). Antes de escribir selectores CSS, inspeccionar manualmente.
+**Descripción:** Faith Technology es WooCommerce SSR y responde sin protección anti-bot para estas páginas; el HTML de producto viene en el server response (cheerio es adecuado).
 
 **Pasos a ejecutar por el desarrollador/agente:**
 
-1. Abrir en el navegador: `https://extremetechcr.com/robots.txt`  
-   - Anotar si hay `Disallow` que afecte categorías o productos.  
-   - Si el scrape de categoría/productos está disallowed, **detenerse** y documentar en README; no violar robots.txt.
+1. Abrir en el navegador: `https://faithtechnologycr.com/robots.txt`
+   - Confirmar que solo se bloquea `/wp-admin/` y que categorías/productos no están disallowed.
+   - No scrapear rutas bloqueadas por robots.txt.
 
-2. Abrir: `https://extremetechcr.com/sitemap.xml` (y sitemaps hijos si los hay).  
-   - Buscar URLs de productos y/o de la categoría RAM.  
-   - Anotar patrones de URL (ej. `/producto/...`, `/product/...`, categoría `/categoria-producto/memoria-ram/` o similar).
+2. No usar `sitemap.xml` para descubrir productos. La categoría RAM paginada ya está acotada y es la fuente confirmada.
 
 3. Abrir la página de categoría de RAM en el sitio (buscar “RAM” / “Memoria” en el menú).  
    - Ver si el listado es una sola página o paginada (`?paged=2`, `/page/2/`, etc.).  
@@ -1177,7 +1175,7 @@ pnpm --filter @hardware-scrapping/scraper scrape:ram
    - precio (monto numérico; quitar `₡`, espacios, puntos de miles)  
    - disponibilidad  
 
-5. Documentar hallazgos en un archivo corto interno opcional `packages/scraper/NOTES-extremetech.md` (no es entregable de producción; ayuda a no adivinar selectores). Si los selectores del plan de abajo no coinciden con el HTML real, **prevalece el HTML real** y se actualizan los selectores en código.
+5. Documentar hallazgos en un archivo corto interno opcional `packages/scraper/NOTES-faithtechnology.md` (no es entregable de producción). Si los selectores del plan de abajo no coinciden con el HTML real, **prevalece el HTML real** y se actualizan los selectores en código.
 
 **User-Agent obligatorio** (desde `.env`):
 
@@ -1189,14 +1187,14 @@ Ejemplo: `ComparadorHW-Bot/1.0 (contacto: yo@mail.com)`
 
 **Rate limit obligatorio:** mínimo 3000–5000 ms entre requests a páginas de producto. Default en `.env`: `SCRAPER_DELAY_MS=4000`. Usar siempre la función `delay()`; no omitir “por apuro”.
 
-- [ ] `robots.txt` revisado
-- [ ] sitemap / categoría RAM inspeccionados
-- [ ] Selectores de listado y ficha de producto anotados
+- [x] `robots.txt` revisado
+- [x] Robots.txt y categoría RAM inspeccionados (sitemap descartado deliberadamente)
+- [x] Selectores de listado y ficha de producto anotados
 - [ ] Email real puesto en `.env` (`SCRAPER_CONTACT_EMAIL` y `SCRAPER_USER_AGENT`)
 
 ---
 
-### Tarea 1.2 — Utilidad `delay` y constantes ExtremeTech
+### Tarea 1.2 — Utilidad `delay` y constantes Faith Technology
 
 #### 1.2.1 — `packages/scraper/src/lib/delay.ts`
 
@@ -1206,21 +1204,19 @@ export function delay(ms: number): Promise<void> {
 }
 ```
 
-#### 1.2.2 — `packages/scraper/src/scrapers/extremetech/constants.ts`
+#### 1.2.2 — `packages/scraper/src/scrapers/faithtechnology/constants.ts`
 
 ```typescript
-export const STORE_NAME = 'ExtremeTech';
-export const STORE_BASE_URL = 'https://extremetechcr.com';
+export const STORE_NAME = 'Faith Technology';
+export const STORE_BASE_URL = 'https://faithtechnologycr.com';
 
 /**
- * URL de categoría RAM — CONFIRMAR en Tarea 1.1 y ajustar si el sitio usa otro slug.
- * Ejemplos posibles a verificar manualmente:
- * - https://extremetechcr.com/categoria-producto/memoria-ram/
- * - https://extremetechcr.com/product-category/memoria-ram/
+ * URL real confirmada durante la inspección manual de Tarea 1.1.
  */
-export const RAM_CATEGORY_URL = `${STORE_BASE_URL}/categoria-producto/memoria-ram/`;
+export const RAM_CATEGORY_URL =
+  'https://faithtechnologycr.com/categoria-producto/almacenamiento/memorias-ram-para-pc/';
 
-export function getScraperHeaders(): HeadersInit {
+export function getScraperHeaders(): Record<string, string> {
   const ua =
     process.env.SCRAPER_USER_AGENT ??
     'ComparadorHW-Bot/1.0 (contacto: missing-email@example.com)';
@@ -1237,7 +1233,7 @@ export function getDelayMs(): number {
 }
 ```
 
-- [ ] `delay.ts` y `constants.ts` creados
+- [x] `delay.ts` y `constants.ts` creados
 
 ---
 
@@ -1258,7 +1254,7 @@ export function getDelayMs(): number {
 2. **Capacidad simple:** si hay `\d+\s*GB` y no hay patrón kit → ese número es `capacity_gb`, `is_kit = false`.  
 3. Si hay **ambos** (total explícito + desglose), preferir el total explícito si existe (`32GB (2x16GB)` → 32) y `is_kit = true`.  
 4. **Tipo:** match case-insensitive `DDR4` / `DDR5` → normalizar a `DDR4` / `DDR5`.  
-5. **Velocidad:** `(\d{3,5})\s*MHz` o a veces solo `3200` junto a DDR; preferir número seguido de `MHz` / `MHZ`.  
+5. **Velocidad:** `(\d{3,5})\s*(mhz|mt\/s)`; normalizar ambos formatos a `speed_mhz`.
 6. Si un campo no se puede extraer → `null` (excepto `is_kit`, que default `false` si no hay señal de kit).
 
 #### 1.3.2 — `packages/scraper/src/extractors/types.ts`
@@ -1288,7 +1284,7 @@ import type { RamSpecs } from '@hardware-scrapping/shared-types';
  * 2. Kit NxM: /(\d+)\s*x\s*(\d+)\s*GB/i  → capacity = N*M, is_kit=true
  * 3. Capacidad simple: /(\d+)\s*GB/i
  * 4. Tipo: /DDR\s*([45])/i → `DDR$1`
- * 5. Speed: /(\d{3,5})\s*MHz/i
+ * 5. Speed: /(\d{3,5})\s*(mhz|mt\/s)/i
  *
  * Ejemplos: ver tabla en PLAN.md Tarea 1.3.1
  */
@@ -1320,9 +1316,9 @@ export { extractRamSpecs } from './ram.js';
 
 **Extensibilidad futura:** agregar GPU = nuevo archivo `gpu.ts` + entrada en `EXTRACTORS` + valor en `CategorySlug`. No modificar extractores existentes.
 
-- [ ] `extractRamSpecs` implementado con las reglas de kit=total
-- [ ] Los 3 ejemplos de la tabla producen el resultado esperado
-- [ ] `EXTRACTORS` registry solo con `ram`
+- [x] `extractRamSpecs` implementado con las reglas de kit=total
+- [x] Los 3 ejemplos de la tabla producen el resultado esperado
+- [x] `EXTRACTORS` registry solo con `ram`
 
 ---
 
@@ -1330,48 +1326,100 @@ export { extractRamSpecs } from './ram.js';
 
 #### 1.4.1 — Helper de fetch
 
-Crear `packages/scraper/src/lib/fetch-html.ts`:
+Crear `packages/scraper/src/lib/fetch-html.ts`. En este entorno, Node 24 `fetch` recibe un Cloudflare Managed Challenge (HTTP 403), mientras que `curl` recibe 200 OK. Por eso el helper usa `curl` mediante `execFile` con argumentos separados, sin shell, manteniendo el User-Agent, timeout de 30 segundos y validación del código HTTP. En Windows usa `curl.exe`; en otros sistemas usa `curl`.
 
 ```typescript
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { getScraperHeaders } from '../scrapers/faithtechnology/constants.js';
 import { logger } from '../logger.js';
-import { getScraperHeaders } from '../scrapers/extremetech/constants.js';
+
+const execFileAsync = promisify(execFile);
+const STATUS_MARKER = '__SCRAPER_HTTP_STATUS__:';
 
 export async function fetchHtml(url: string): Promise<string | null> {
+  const headers = getScraperHeaders();
+  const curlCommand = process.platform === 'win32' ? 'curl.exe' : 'curl';
+
   try {
-    const res = await fetch(url, { headers: getScraperHeaders() });
-    if (!res.ok) {
-      logger.warn('HTTP no OK al fetchear', { url, status: res.status });
+    const { stdout } = await execFileAsync(
+      curlCommand,
+      [
+        '--silent',
+        '--show-error',
+        '--location',
+        '--connect-timeout',
+        '30',
+        '--max-time',
+        '30',
+        '--user-agent',
+        headers['User-Agent'] ?? '',
+        '--header',
+        `Accept-Language: ${headers['Accept-Language']}`,
+        '--header',
+        `Accept: ${headers.Accept}`,
+        '--write-out',
+        `\n${STATUS_MARKER}%{http_code}`,
+        url,
+      ],
+      { maxBuffer: 10 * 1024 * 1024 },
+    );
+
+    const markerIndex = stdout.lastIndexOf(STATUS_MARKER);
+    if (markerIndex === -1) {
+      logger.error('curl no devolvió código HTTP', { url });
       return null;
     }
-    return await res.text();
-  } catch (err) {
-    logger.error('Fallo de red al fetchear', { url, err });
+
+    const body = stdout.slice(0, markerIndex);
+    const status = Number(stdout.slice(markerIndex + STATUS_MARKER.length).trim());
+    if (!Number.isInteger(status) || status < 200 || status >= 300) {
+      logger.warn('HTTP no OK al fetchear', { url, status });
+      return null;
+    }
+
+    return body;
+  } catch (error) {
+    const commandError = error as NodeJS.ErrnoException & {
+      stderr?: string;
+      signal?: NodeJS.Signals | null;
+    };
+
+    logger.error('Fallo de red al fetchear con curl', {
+      url,
+      exitCode: typeof commandError.code === 'number' ? commandError.code : null,
+      errorCode: typeof commandError.code === 'string' ? commandError.code : null,
+      signal: commandError.signal ?? null,
+      stderr: commandError.stderr?.trim() || null,
+    });
     return null;
   }
 }
 ```
 
-> Node 24 incluye `fetch` global. No hace falta `node-fetch`.
+> No se usa `shell: true`; la URL y los headers se pasan como argumentos separados para evitar inyección de comandos.
 
-#### 1.4.2 — `packages/scraper/src/scrapers/extremetech/discover.ts`
+#### 1.4.2 — `packages/scraper/src/scrapers/faithtechnology/discover.ts`
 
-Responsabilidad: devolver `string[]` de URLs absolutas de producto RAM.
+Responsabilidad: devolver productos RAM descubiertos con URL absoluta. Cada producto mantiene solo su URL; Faith Technology no aporta marca.
 
-**Algoritmo sugerido (ajustar tras Tarea 1.1):**
+**Algoritmo confirmado por la inspección de Tarea 1.1:**
 
 1. Empezar en `RAM_CATEGORY_URL`.
 2. Parsear con cheerio.
-3. Seleccionar links de producto (ej. típico WooCommerce: `a.woocommerce-LoopProduct-link`, o `ul.products li.product a`). **Confirmar en HTML real.**
+3. Seleccionar links con `h3.wd-entities-title a`.
 4. Normalizar a URL absoluta con `new URL(href, STORE_BASE_URL).href`.
 5. Deduplicar con `Set`.
-6. Si hay paginación, seguir “next” hasta que no haya más, aplicando `delay(getDelayMs())` entre páginas de listado también.
-7. Si el listado falla, intentar fallback: filtrar URLs del sitemap que parezcan productos RAM (solo si 1.1 confirmó que el sitemap es usable).
+6. Seguir páginas con el formato `${RAM_CATEGORY_URL}page/N/`; detenerse si la respuesta es 404/no disponible o no contiene productos.
+7. No usar `sitemap.xml`: la categoría paginada ya está acotada a RAM.
+
+Faith Technology no tiene selector de marca. El descubrimiento no intenta inferirla desde la categoría del producto y `Product.brand` se persiste como `null`.
 
 Loggear: cantidad de URLs encontradas (`logger.info`).
 
-- [ ] `discoverRamProductUrls(): Promise<string[]>` implementado
-- [ ] Deduplica URLs
-- [ ] Respeta delay entre páginas de listado
+- [x] `discoverRamProductUrls(): Promise<string[]>` implementado
+- [x] Deduplica URLs
+- [x] Respeta delay entre páginas de listado
 
 ---
 
@@ -1384,30 +1432,28 @@ export interface ParsedProductPage {
   url: string;
   name: string;
   price: number | null; // CRC
-  inStock: boolean;
   brand: string | null;
 }
 ```
 
-#### 1.5.2 — `packages/scraper/src/scrapers/extremetech/parse-product.ts`
+#### 1.5.2 — `packages/scraper/src/scrapers/faithtechnology/parse-product.ts`
 
-Usar cheerio. Selectores **provisionales** (WooCommerce típico) — reemplazar por los de Tarea 1.1:
+Usar cheerio con los selectores confirmados durante la inspección manual:
 
-| Campo | Selectores candidatos a probar |
+| Campo | Selector confirmado |
 |-------|--------------------------------|
-| nombre | `h1.product_title`, `h1.entry-title` |
-| precio | `p.price ins .amount`, `p.price .amount`, `span.woocommerce-Price-amount` |
-| stock | `.stock.in-stock` / `.stock.out-of-stock`, o botón `button.single_add_to_cart_button` disabled |
-| marca | fila de atributos, `.posted_in`, o primer token del nombre |
+| nombre | `h1.product_title.entry-title.wd-entities-title` |
+| precio principal | `p.price` (evita el placeholder `span.woocommerce-Price-amount.amount` con valor `₡0`) |
+| marca | No existe selector de marca en Faith Technology; se persiste `null` |
+
+La detección real de stock está fuera de alcance. `ParsedProductPage` no contiene `inStock`.
 
 **Parseo de precio (CRC):**
 
-1. Tomar texto del nodo de precio (ej. `₡45,000.00` o `₡45.000`).
-2. Eliminar símbolo de moneda, espacios, letras.
-3. En CR a veces usan `.` como miles y `,` como decimal (o al revés). Estrategia robusta simple para Fase 1:
-   - Si hay coma y punto, asumir formato en-US miles con coma decimal o el que se observe en 1.1.
-   - Documentar en código el formato **real observado** en ExtremeTech y parsear ese.
-4. Si no se puede parsear → `price = null`, `logger.warn`.
+1. Tomar el primer `p.price` del producto para evitar el placeholder `span.woocommerce-Price-amount.amount` con valor `₡0`.
+2. Eliminar los elementos `small` anidados, porque pueden incluir texto como `I.V.A.I`.
+3. Extraer todos los grupos que coincidan con `/\d+/g` y unirlos; así se ignoran comas, espacios normales, espacios no separables, puntos y cualquier otro separador (`₡71 100` → `71100`, `₡65,000` → `65000`, `₡71.100` → `71100`).
+4. Si no se puede extraer un número válido → `price = null`, `logger.warn` incluyendo el texto crudo problemático. Nunca usar `0` como fallback.
 
 **Errores:**
 
@@ -1417,15 +1463,15 @@ Usar cheerio. Selectores **provisionales** (WooCommerce típico) — reemplazar 
 Firma:
 
 ```typescript
-export function parseExtremeTechProductPage(
+export function parseFaithTechnologyProductPage(
   url: string,
   html: string,
 ): ParsedProductPage | null;
 ```
 
-- [ ] Parser implementado con selectores validados en HTML real
-- [ ] Precio numérico en colones
-- [ ] `inStock` booleano
+- [x] Parser implementado con selectores validados en HTML real
+- [x] Precio numérico en colones
+- [x] Stock fuera de alcance y ausente de `ParsedProductPage`
 
 ---
 
@@ -1435,7 +1481,7 @@ export function parseExtremeTechProductPage(
 
 | Entidad | Clave de upsert |
 |---------|------------------|
-| `Store` | `name = 'ExtremeTech'` |
+| `Store` | `name = 'Faith Technology'` |
 | `Product` | `canonicalName` + `category` (`canonicalName` = nombre limpio del store; `category = 'ram'`) |
 | `StoreListing` | `storeId` + `url` |
 | `PriceHistory` | **siempre insert** (nueva fila por corrida/scrape del listing) |
@@ -1448,7 +1494,7 @@ Flujo por producto parseado + specs:
 ```typescript
 import { prisma } from '@hardware-scrapping/database';
 import type { RamSpecs } from '@hardware-scrapping/shared-types';
-import type { ParsedProductPage } from '../scrapers/extremetech/parse-product.js';
+import type { ParsedProductPage } from '../scrapers/faithtechnology/parse-product.js';
 
 export async function ensureStore(name: string, baseUrl: string) {
   return prisma.store.upsert({
@@ -1514,7 +1560,8 @@ export async function persistRamProduct(params: {
       data: {
         listingId: listing.id,
         price: parsed.price,
-        inStock: parsed.inStock,
+        // La detección de stock está fuera de alcance en esta fase.
+        inStock: true,
       },
     });
   }
@@ -1525,15 +1572,15 @@ export async function persistRamProduct(params: {
 
 El ejecutor debe completar tipos Prisma (`Decimal` acepta number en create) y el manejo de `skipped_no_price` de forma consistente con ScrapeRun.
 
-- [ ] Upserts no duplican Product ni StoreListing en el segundo run
-- [ ] Cada run agrega filas nuevas de PriceHistory cuando hay precio
-- [ ] `specs` JSON contiene el resultado de `extractRamSpecs`
+- [x] Upserts no duplican Product ni StoreListing en el segundo run
+- [x] Cada run agrega filas nuevas de PriceHistory cuando hay precio
+- [x] `specs` JSON contiene el resultado de `extractRamSpecs`
 
 ---
 
 ### Tarea 1.7 — Orquestación del scrape RAM
 
-#### 1.7.1 — `packages/scraper/src/scrapers/extremetech/run-ram.ts`
+#### 1.7.1 — `packages/scraper/src/scrapers/faithtechnology/run-ram.ts`
 
 Algoritmo paso a paso:
 
@@ -1546,7 +1593,7 @@ Algoritmo paso a paso:
 7. Para cada `url` en `urls`:
    1. `html = await fetchHtml(url)`
    2. Si `html === null` → `errorsCount++`, log `warn`/`error`, **continue**
-   3. `parsed = parseExtremeTechProductPage(url, html)`
+   3. `parsed = parseFaithTechnologyProductPage(url, html)`
    4. Si `parsed === null` → `errorsCount++`, log `warn`, **continue**
    5. `specs = extractRamSpecs(parsed.name)`
    6. Log `debug` o `info` con nombre + specs resumidas
@@ -1570,7 +1617,7 @@ Algoritmo paso a paso:
 ```typescript
 import './load-env.js';
 import { logger } from './logger.js';
-import { runExtremeTechRamScrape } from './scrapers/extremetech/run-ram.js';
+import { runFaithTechnologyRamScrape } from './scrapers/faithtechnology/run-ram.js';
 import { prisma } from '@hardware-scrapping/database';
 
 async function main() {
@@ -1582,7 +1629,7 @@ async function main() {
   }
 
   try {
-    await runExtremeTechRamScrape();
+    await runFaithTechnologyRamScrape();
   } catch (err) {
     logger.error('Scrape abortado por error no controlado', { err });
     process.exitCode = 1;
@@ -1596,10 +1643,10 @@ main();
 
 Script ya definido: `pnpm --filter @hardware-scrapping/scraper scrape:ram`
 
-- [ ] Orquestación completa con ScrapeRun running → terminal
-- [ ] Errores por producto no detienen el lote
-- [ ] Delay entre productos respetado
-- [ ] `prisma.$disconnect()` en finally
+- [x] Orquestación completa con ScrapeRun running → terminal
+- [x] Errores por producto no detienen el lote
+- [x] Delay entre productos respetado
+- [x] `prisma.$disconnect()` en finally
 
 ---
 
@@ -1615,11 +1662,13 @@ Script ya definido: `pnpm --filter @hardware-scrapping/scraper scrape:ram`
 | Error Prisma inesperado | `error` + stack | sí | `errorsCount++` |
 | Crash no capturado en main | `error` | proceso exit 1 | intentar marcar run failed si se tiene id |
 
-- [ ] Matriz respetada en el código
+- [x] Matriz respetada en el código
 
 ---
 
 ### Tarea 1.9 — Verificación manual de datos
+
+Esta tarea queda pendiente de ejecución real. El código está listo, pero por instrucción del usuario no se ejecutará el scraper contra Faith Technology en esta sesión. Después de revisar el código, ejecutar el comando de aceptación y marcar los checkboxes siguientes solo tras comprobar los datos en Prisma.
 
 Tras un scrape exitoso o partial:
 
@@ -1637,10 +1686,10 @@ docker compose exec postgres psql -U hardware -d hardware_scrapping -c "SELECT C
 
 **Qué validar:**
 
-1. Existe `Store` name = `ExtremeTech`.
+1. Existe `Store` name = `Faith Technology`.
 2. Hay varios `Product` con `category = 'ram'` y `specs` JSON con keys `capacity_gb`, `ram_type`, `speed_mhz`, `is_kit`.
 3. Al menos algunos `capacity_gb` / `ram_type` no nulos (depende de nombres del sitio).
-4. `StoreListing` con URLs de ExtremeTech.
+4. `StoreListing` con URLs de Faith Technology.
 5. `PriceHistory` con precios > 0.
 6. Último `ScrapeRun` con `status` `success` o `partial`, `finishedAt` no null.
 7. **Segundo run:** no duplica products/listings; sí agrega más `PriceHistory`.
@@ -1669,21 +1718,21 @@ pnpm --filter @hardware-scrapping/scraper scrape:ram
    - cierre con status final
 2. Archivos `packages/scraper/logs/combined.log` y, si hubo errores, entradas en `error.log`
 3. En DB:
-   - productos RAM reales de ExtremeTech
+   - productos RAM reales de Faith Technology
    - specs extraídas de forma razonable en la mayoría de nombres “estándar”
    - `ScrapeRun` final `success` o `partial`
 4. Re-ejecutar el mismo comando no duplica `Product` ni `StoreListing`
 
 **Checklist final Fase 1:**
 
-- [ ] Inspección manual robots/sitemap/HTML hecha
-- [ ] `extractRamSpecs` con kit = capacidad total
+- [ ] Inspección manual de `robots.txt` y HTML hecha (sitemap no utilizado)
+- [x] `extractRamSpecs` con kit = capacidad total
 - [ ] Scrape manual vía `pnpm --filter @hardware-scrapping/scraper scrape:ram`
-- [ ] Persistencia completa Store → Product → Listing → PriceHistory → ScrapeRun
-- [ ] Rate limit ≥ 3s entre productos
+- [x] Persistencia completa Store → Product → Listing → PriceHistory → ScrapeRun (implementada; pendiente validar con datos reales)
+- [x] Rate limit ≥ 3s entre productos (implementado)
 - [ ] User-Agent con contacto real
-- [ ] Sin `console.log`; solo Winston
-- [ ] Detalle de logs fuera de Postgres; ScrapeRun solo resumen
+- [x] Sin `console.log`; solo Winston
+- [x] Detalle de logs fuera de Postgres; ScrapeRun solo resumen
 
 ---
 
@@ -1744,13 +1793,13 @@ Root package name: `hardware-scrapping` (sin scope, `"private": true`).
 ### Fase 1
 
 - [ ] 1.1 Inspección manual sitio + robots.txt
-- [ ] 1.2 delay + constants
-- [ ] 1.3 extractRamSpecs + EXTRACTORS
-- [ ] 1.4 fetch + discover URLs
-- [ ] 1.5 parse product page
-- [ ] 1.6 persistencia upsert
-- [ ] 1.7 orquestación run-ram + CLI
-- [ ] 1.8 matriz de errores
+- [x] 1.2 delay + constants
+- [x] 1.3 extractRamSpecs + EXTRACTORS
+- [x] 1.4 fetch + discover URLs
+- [x] 1.5 parse product page
+- [x] 1.6 persistencia upsert
+- [x] 1.7 orquestación run-ram + CLI
+- [x] 1.8 matriz de errores
 - [ ] 1.9 verificación DB + segundo run
 - [ ] Criterio de aceptación Fase 1
 
