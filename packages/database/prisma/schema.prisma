@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id            Int            @id @default(autoincrement())
+  canonicalName String
+  category      String
+  brand         String?
+  specs         Json
+  createdAt     DateTime       @default(now())
+  listings      StoreListing[]
+
+  @@unique([canonicalName, category])
+  @@index([category])
+}
+
+model Store {
+  id         Int            @id @default(autoincrement())
+  name       String         @unique
+  baseUrl    String
+  listings   StoreListing[]
+  scrapeRuns ScrapeRun[]
+}
+
+model StoreListing {
+  id               Int            @id @default(autoincrement())
+  productId        Int
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  storeId          Int
+  store            Store          @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  storeProductName String
+  url              String
+  priceHistory     PriceHistory[]
+
+  @@unique([storeId, url])
+  @@index([productId])
+  @@index([storeId])
+}
+
+model PriceHistory {
+  id        Int          @id @default(autoincrement())
+  listingId Int
+  listing   StoreListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  price     Decimal      @db.Decimal(12, 2)
+  inStock   Boolean
+  scrapedAt DateTime     @default(now())
+
+  @@index([listingId])
+  @@index([scrapedAt])
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("user")
+  createdAt    DateTime @default(now())
+}
+
+model ScrapeRun {
+  id            Int       @id @default(autoincrement())
+  storeId       Int
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  category      String
+  status        String
+  productsFound Int       @default(0)
+  errorsCount   Int       @default(0)
+  startedAt     DateTime
+  finishedAt    DateTime?
+  errorSummary  String?
+
+  @@index([storeId])
+  @@index([startedAt])
+}

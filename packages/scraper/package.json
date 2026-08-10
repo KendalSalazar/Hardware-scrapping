@@ -1,0 +1,22 @@
+{
+  "name": "@hardware-scrapping/scraper",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "scrape:ram": "tsx src/index.ts ram"
+  },
+  "dependencies": {
+    "@hardware-scrapping/database": "workspace:*",
+    "@hardware-scrapping/shared-types": "workspace:*",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

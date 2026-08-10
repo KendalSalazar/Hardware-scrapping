@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hardware-scrapping-db
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hardware}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hardware_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-hardware_scrapping}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hardware} -d ${POSTGRES_DB:-hardware_scrapping}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres_data:
