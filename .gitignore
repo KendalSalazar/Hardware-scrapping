@@ -36,3 +36,8 @@ coverage/
 tmp/
 temp/
 .turbo/
+
+# Prompts y planes
+_prompts/
+plans/
+
