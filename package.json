@@ -10,7 +10,10 @@
     "format:check": "prettier --check .",
     "db:generate": "pnpm --filter @hardware-scrapping/database generate",
     "db:migrate": "pnpm --filter @hardware-scrapping/database migrate:dev",
-    "db:studio": "pnpm --filter @hardware-scrapping/database studio"
+    "db:studio": "pnpm --filter @hardware-scrapping/database studio",
+    "web:dev": "pnpm --filter @hardware-scrapping/web dev",
+    "web:build": "pnpm --filter @hardware-scrapping/web build",
+    "api:dev": "pnpm --filter @hardware-scrapping/api dev"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

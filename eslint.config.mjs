@@ -7,6 +7,8 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/dist/**',
       '**/coverage/**',
+      '**/.next/**',
+      '**/out/**',
       '**/logs/**',
       'pnpm-lock.yaml',
     ],
@@ -14,7 +16,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/*.ts'],
+    files: ['**/*.{ts,tsx}'],
     rules: {
       'no-console': 'error',
       '@typescript-eslint/no-unused-vars': [
