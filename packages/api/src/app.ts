@@ -1,9 +1,16 @@
 import express, { type Application } from 'express';
+import cors from 'cors';
 import { prisma } from '@hardware-scrapping/database';
 import { logger } from './logger.js';
+import { ApiError, ErrorCodes } from './errors/api-error.js';
+import { errorHandler } from './errors/error-handler.js';
+import { categoriesRouter } from './routes/categories.routes.js';
+import { productsRouter } from './routes/products.routes.js';
 
 export function createApp(): Application {
   const app = express();
+
+  app.use(cors({ origin: true }));
   app.use(express.json());
 
   app.get('/health', async (_req, res) => {
@@ -15,6 +22,15 @@ export function createApp(): Application {
       res.status(503).json({ status: 'degraded', db: 'down' });
     }
   });
+
+  app.use('/api/categories', categoriesRouter);
+  app.use('/api/products', productsRouter);
+
+  app.use('/api', (_req, _res, next) => {
+    next(new ApiError(404, ErrorCodes.NOT_FOUND, 'API route not found'));
+  });
+
+  app.use(errorHandler);
 
   return app;
 }

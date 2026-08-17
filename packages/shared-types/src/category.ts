@@ -33,7 +33,7 @@ export const RAM_SCHEMA: CategorySchema = {
       key: 'capacity_gb',
       label: 'Capacidad',
       type: 'enum',
-      options: ['8', '16', '32', '64'],
+      options: ['8', '16', '32', '48', '64'],
     },
     {
       key: 'ram_type',

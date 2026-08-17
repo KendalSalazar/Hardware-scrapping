@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "scrape:ram": "tsx src/index.ts ram",
+    "reextract:ram-specs": "tsx src/scripts/reextract-ram-specs.ts",
     "check:ram-extractor": "tsx src/extractors/ram.selfcheck.ts",
     "check:product-parser": "tsx src/scrapers/faithtechnology/parse-product.selfcheck.ts",
     "check:category-fetch": "tsx src/lib/fetch-html.selfcheck.ts"

@@ -4,23 +4,24 @@ import type { RamSpecs } from '@hardware-scrapping/shared-types';
  * Extrae specs de RAM desde el nombre comercial del producto.
  *
  * Patrones usados:
- * - Kit con capacidad total: /(\d+)\s*GB\s*\(\s*(\d+)\s*x\s*(\d+)\s*GB\s*\)/i
- * - Kit NxM: /(\d+)\s*x\s*(\d+)\s*GB/i
+ * - Kit con capacidad total: /(\d+)\s*GB\s*\(\s*(\d+)\s*[x×]\s*(\d+)\s*GB\s*\)/i
+ * - Kit NxM: /(\d+)\s*[x×]\s*(\d+)\s*GB/i
  * - Capacidad simple: /(\d+)\s*GB\b/i
  * - Tipo: /DDR\s*([45])/i
- * - Velocidad: /(\d{3,5})\s*(mhz|mt\/s)/i
+ * - Velocidad: se quitan solo tokens DDR4/DDR5 antes de buscar MHz o MT/s
  *
  * La capacidad de un kit es siempre la capacidad total. Por ejemplo,
  * "2x8GB" produce capacity_gb = 16 e is_kit = true.
- */
+  */
 export function extractRamSpecs(productName: string): RamSpecs {
   const kitWithTotal = productName.match(
-    /(\d+)\s*GB\s*\(\s*(\d+)\s*x\s*(\d+)\s*GB\s*\)/i,
+    /(\d+)\s*GB\s*\(\s*(\d+)\s*[x×]\s*(\d+)\s*GB\s*\)/i,
   );
-  const kit = productName.match(/(\d+)\s*x\s*(\d+)\s*GB/i);
+  const kit = productName.match(/(\d+)\s*[x×]\s*(\d+)\s*GB/i);
   const simpleCapacity = productName.match(/(\d+)\s*GB\b/i);
   const ramTypeMatch = productName.match(/DDR\s*([45])/i);
-  const speedMatch = productName.match(/(\d{3,5})\s*(mhz|mt\/s)/i);
+  const speedSource = productName.replace(/DDR\s*[45]/gi, '');
+  const speedMatch = speedSource.match(/(?<!\d)(\d{3,5})\s*(mhz|mt\/s)/i);
 
   let capacityGb: number | null = null;
   let isKit = false;

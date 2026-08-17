@@ -31,3 +31,12 @@ assert.deepEqual(
     is_kit: false,
   },
 );
+
+assert.equal(extractRamSpecs('Hiksemi 8GB DDR43200MHZ').speed_mhz, 3200);
+assert.equal(extractRamSpecs('Hiksemi 8GB DDR4 DDR43200 MT/S').speed_mhz, 3200);
+assert.deepEqual(extractRamSpecs('Corsair 16GB (2×8GB) DDR4 3200MHz'), {
+  capacity_gb: 16,
+  ram_type: 'DDR4',
+  speed_mhz: 3200,
+  is_kit: true,
+});
