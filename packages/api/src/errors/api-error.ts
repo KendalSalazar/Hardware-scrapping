@@ -8,6 +8,10 @@ export const ErrorCodes = {
   PRODUCT_NOT_FOUND: 'PRODUCT_NOT_FOUND',
   NOT_FOUND: 'NOT_FOUND',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  SCRAPE_RUN_NOT_FOUND: 'SCRAPE_RUN_NOT_FOUND',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

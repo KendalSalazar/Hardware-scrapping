@@ -10,7 +10,8 @@ mediante una API REST y un frontend Next.js.
 - Fase 1: scraper real de RAM para Faith Technology.
 - Fase 2: API Express con filtros dinámicos, paginación y detalle de productos.
 - Fase 3: frontend Next.js con filtros, ordenamiento, paginación e historial.
-- Auth, cron, nuevas categorías y gráficos todavía no están implementados.
+- Auth JWT y API admin de solo lectura implementados en Fase 4. Cron, nuevas
+  categorías y gráficos todavía no están implementados.
 
 ## Requisitos
 
@@ -83,6 +84,10 @@ pnpm --filter @hardware-scrapping/scraper reextract:ram-specs -- --apply
 | `GET /api/categories/:slug/filters` | Devuelve filtros dinámicos de una categoría |
 | `GET /api/products?category=ram` | Lista productos con precio actual más bajo |
 | `GET /api/products/:id` | Detalle e historial de precios |
+| `POST /api/auth/login` | Login y emisión de JWT de 8 horas |
+| `GET /api/admin/scrape-runs` | Lista protegida de ejecuciones del scraper |
+| `GET /api/admin/scrape-runs/:id` | Detalle protegido de una ejecución |
+| `GET /api/admin/stats` | Estadísticas protegidas del sistema |
 
 Ejemplos:
 
@@ -101,6 +106,36 @@ Filtros soportados actualmente:
 
 Los filtros se validan contra `CATEGORY_REGISTRY`. Los parámetros desconocidos
 devuelven `400`.
+
+## Admin API (Fase 4)
+
+Las rutas `/api/admin/*` requieren un JWT de un usuario con `role=admin`.
+No existe registro público: crear el primer administrador desde la raíz:
+
+```bash
+pnpm --filter @hardware-scrapping/api create-admin -- --email=admin@example.com --password=super-secret-password
+```
+
+Login:
+
+```bash
+curl -s -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"super-secret-password"}'
+```
+
+Usar el valor `token` recibido para consultar el panel administrativo vía API:
+
+```bash
+curl -s http://localhost:3001/api/admin/scrape-runs \
+  -H "Authorization: Bearer TOKEN"
+
+curl -s http://localhost:3001/api/admin/stats \
+  -H "Authorization: Bearer TOKEN"
+```
+
+En producción, reemplazar el placeholder de `JWT_SECRET` por un valor aleatorio
+largo. El API rechaza el placeholder exacto en `NODE_ENV=production`.
 
 ## Flujo de datos
 
@@ -173,6 +208,7 @@ de backend.
 - Solo existe la categoría RAM.
 - La detección de stock todavía usa el valor definido por Fase 1.
 - Los rangos de specs se filtran en memoria por el volumen actual de datos.
-- No hay autenticación, administración ni tareas programadas.
+- No hay UI web para administración ni tareas programadas; el admin actual es
+  una API protegida de solo lectura.
 - La versión de Next usada por el scaffold es `15.2.4`; revisar avisos de
   seguridad antes de desplegar a producción.

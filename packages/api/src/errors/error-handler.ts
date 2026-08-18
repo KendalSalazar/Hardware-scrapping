@@ -1,5 +1,6 @@
 import type { ErrorRequestHandler } from 'express';
 import { logger } from '../logger.js';
+import { safeErrorDetails } from '../utils/safe-error.js';
 import { ErrorCodes, isApiError } from './api-error.js';
 
 /**
@@ -28,7 +29,11 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 
   const message = err instanceof Error ? err.message : 'Unexpected server error';
   const stack = err instanceof Error ? err.stack : undefined;
-  logger.error(message, { code: ErrorCodes.INTERNAL_ERROR, stack, err });
+  logger.error(message, {
+    code: ErrorCodes.INTERNAL_ERROR,
+    stack,
+    error: safeErrorDetails(err),
+  });
 
   res.status(500).json({
     error: {
