@@ -12,6 +12,7 @@ export const ErrorCodes = {
   UNAUTHORIZED: 'UNAUTHORIZED',
   FORBIDDEN: 'FORBIDDEN',
   SCRAPE_RUN_NOT_FOUND: 'SCRAPE_RUN_NOT_FOUND',
+  SCRAPE_ALREADY_RUNNING: 'SCRAPE_ALREADY_RUNNING',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

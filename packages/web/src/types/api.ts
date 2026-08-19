@@ -80,4 +80,53 @@ export interface ApiErrorBody {
   };
 }
 
+export interface LoginRequestDto {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponseDto {
+  token: string;
+  tokenType: 'Bearer';
+  expiresIn: string;
+  user: {
+    id: number;
+    email: string;
+    role: string;
+  };
+}
+
+export interface ScrapeRunDto {
+  id: number;
+  storeId: number;
+  storeName: string;
+  category: string;
+  status: string;
+  productsFound: number;
+  errorsCount: number;
+  startedAt: string;
+  finishedAt: string | null;
+  errorSummary: string | null;
+}
+
+export interface ScrapeRunListResponseDto {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  runs: ScrapeRunDto[];
+}
+
+export interface AdminStatsDto {
+  productsCount: number;
+  listingsCount: number;
+  priceHistoryCount: number;
+  scrapeRunsCount: number;
+  scrapeRunsByStatus: Record<string, number>;
+  lastRun: ScrapeRunDto | null;
+}
+
+export interface StartScrapeResponseDto {
+  run: ScrapeRunDto;
+}
+
 export type ProductSort = 'price_asc' | 'price_desc' | 'newest';

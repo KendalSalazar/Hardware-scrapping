@@ -19,36 +19,76 @@ function summarizeErrors(errors: string[]): string | null {
   return errors.join(' | ').slice(0, MAX_ERROR_SUMMARY_LENGTH);
 }
 
-export async function runFaithTechnologyRamScrape(): Promise<void> {
-  const startedAt = new Date();
+export interface RunRamOptions {
+  /** API-created run to reuse; omitted for the legacy CLI flow. */
+  scrapeRunId?: number;
+}
+
+export async function runFaithTechnologyRamScrape(
+  options: RunRamOptions = {},
+): Promise<void> {
   const store = await ensureStore(STORE_NAME, STORE_BASE_URL);
-  const run = await prisma.scrapeRun.create({
-    data: {
-      storeId: store.id,
-      category: CATEGORY,
-      status: 'running',
-      startedAt,
-    },
-  });
+  const run = options.scrapeRunId
+    ? await prisma.scrapeRun.findUnique({ where: { id: options.scrapeRunId } })
+    : await prisma.scrapeRun.create({
+        data: {
+          storeId: store.id,
+          category: CATEGORY,
+          status: 'running',
+          startedAt: new Date(),
+        },
+      });
+
+  if (!run) {
+    throw new Error(`ScrapeRun ${options.scrapeRunId} not found`);
+  }
+
+  if (options.scrapeRunId !== undefined && run.status !== 'running') {
+    throw new Error(
+      `ScrapeRun ${options.scrapeRunId} is not in running status (got ${run.status})`,
+    );
+  }
+
+  const runId = run.id;
+
+  if (options.scrapeRunId !== undefined) {
+    await prisma.scrapeRun.update({
+      where: { id: runId },
+      data: {
+        storeId: store.id,
+        category: CATEGORY,
+      },
+    });
+    logger.info('Reutilizando ScrapeRun creado por la API', { scrapeRunId: runId });
+  } else {
+    logger.info('ScrapeRun creado por CLI', { scrapeRunId: runId });
+  }
 
   let productsFound = 0;
   let errorsCount = 0;
   const errorSamples: string[] = [];
 
+  async function reportProgress(): Promise<void> {
+    await prisma.scrapeRun.update({
+      where: { id: runId },
+      data: { productsFound, errorsCount },
+    });
+  }
+
   try {
-    logger.info('Inicio de corrida de scraper RAM', { scrapeRunId: run.id });
+    logger.info('Inicio de corrida de scraper RAM', { scrapeRunId: runId });
     const products = await discoverRamProducts();
 
     if (products.length === 0) {
       await prisma.scrapeRun.update({
-        where: { id: run.id },
+        where: { id: runId },
         data: {
           status: 'failed',
           finishedAt: new Date(),
           errorSummary: 'No product URLs discovered',
         },
       });
-      logger.error('No se descubrieron productos RAM', { scrapeRunId: run.id });
+      logger.error('No se descubrieron productos RAM', { scrapeRunId: runId });
       return;
     }
 
@@ -93,9 +133,18 @@ export async function runFaithTechnologyRamScrape(): Promise<void> {
         errorSamples.push(`persist: ${discovered.url}`);
         logger.error('Error procesando producto; se continúa con el siguiente', {
           url: discovered.url,
-          error,
+          message: error instanceof Error ? error.message : String(error),
         });
       } finally {
+        try {
+          await reportProgress();
+        } catch (progressError) {
+          logger.warn('No se pudo persistir progreso de ScrapeRun', {
+            scrapeRunId: runId,
+            message:
+              progressError instanceof Error ? progressError.message : String(progressError),
+          });
+        }
         await delay(getDelayMs());
       }
     }
@@ -104,7 +153,7 @@ export async function runFaithTechnologyRamScrape(): Promise<void> {
       productsFound === 0 ? 'failed' : errorsCount === 0 ? 'success' : 'partial';
 
     await prisma.scrapeRun.update({
-      where: { id: run.id },
+      where: { id: runId },
       data: {
         status,
         productsFound,
@@ -115,18 +164,18 @@ export async function runFaithTechnologyRamScrape(): Promise<void> {
     });
 
     logger.info('Corrida de scraper RAM finalizada', {
-      scrapeRunId: run.id,
+      scrapeRunId: runId,
       status,
       productsFound,
       errorsCount,
     });
   } catch (error) {
     logger.error('Error no controlado durante la corrida RAM', {
-      scrapeRunId: run.id,
-      error,
+      scrapeRunId: runId,
+      message: error instanceof Error ? error.message : String(error),
     });
     await prisma.scrapeRun.update({
-      where: { id: run.id },
+      where: { id: runId },
       data: {
         status: 'failed',
         productsFound,

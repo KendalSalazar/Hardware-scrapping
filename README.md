@@ -10,8 +10,10 @@ mediante una API REST y un frontend Next.js.
 - Fase 1: scraper real de RAM para Faith Technology.
 - Fase 2: API Express con filtros dinámicos, paginación y detalle de productos.
 - Fase 3: frontend Next.js con filtros, ordenamiento, paginación e historial.
-- Auth JWT y API admin de solo lectura implementados en Fase 4. Cron, nuevas
-  categorías y gráficos todavía no están implementados.
+- Fase 4: autenticación JWT, usuarios admin y API admin de solo lectura.
+- Fase 5: login web, panel admin, scraping manual en background y progreso en vivo.
+- Cron fue descartado; no hay scraping programado automático.
+- Nuevas categorías, matching multi-tienda y deploy final todavía no están implementados.
 
 ## Requisitos
 
@@ -88,6 +90,8 @@ pnpm --filter @hardware-scrapping/scraper reextract:ram-specs -- --apply
 | `GET /api/admin/scrape-runs` | Lista protegida de ejecuciones del scraper |
 | `GET /api/admin/scrape-runs/:id` | Detalle protegido de una ejecución |
 | `GET /api/admin/stats` | Estadísticas protegidas del sistema |
+| `POST /api/admin/scrapers/run` | Dispara manualmente el scraper RAM (admin) |
+| `POST /api/admin/scrapers/:id/stop` | Detiene una corrida RAM activa (admin) |
 
 Ejemplos:
 
@@ -136,6 +140,51 @@ curl -s http://localhost:3001/api/admin/stats \
 
 En producción, reemplazar el placeholder de `JWT_SECRET` por un valor aleatorio
 largo. El API rechaza el placeholder exacto en `NODE_ENV=production`.
+
+## Admin UI y disparo de scraper (Fase 5)
+
+Ejecutar API y frontend en terminales separadas:
+
+```bash
+pnpm api:dev
+pnpm web:dev
+```
+
+Luego abrir `http://localhost:3000/login`, ingresar con el usuario admin y
+visitar `/admin`. El botón inicia el scraper en el servidor y actualiza el
+progreso cada cuatro segundos mediante polling.
+
+Características principales de Fase 5:
+
+- La API crea el `ScrapeRun` y dispara el scraper como proceso hijo independiente.
+- El proceso hijo recibe `--scrape-run-id` y reutiliza esa fila; no crea una corrida duplicada.
+- El scraper actualiza `productsFound` y `errorsCount` después de cada producto.
+- Solo se permite una corrida RAM reciente a la vez; un segundo disparo devuelve `409`.
+- El botón **Detener scraping** termina la corrida activa y la marca como `failed` con
+  `Stopped manually by admin`.
+- Corridas `running` antiguas se conservan en el historial, pero no se muestran como
+  activas ni bloquean una nueva corrida.
+- Cerrar la pestaña no detiene el proceso del servidor; el progreso puede consultarse
+  nuevamente desde `/admin`.
+
+El comando CLI clásico sigue disponible y crea su propio `ScrapeRun`:
+
+```bash
+pnpm --filter @hardware-scrapping/scraper scrape:ram
+```
+
+El endpoint admin crea el `ScrapeRun` y pasa `--scrape-run-id` al proceso hijo;
+el scraper reutiliza esa fila y no crea una segunda corrida.
+
+Las corridas `running` antiguas se conservan en el historial, pero no se
+consideran activas en la UI. Una corrida reciente puede detenerse con el botón
+**Detener scraping**; queda marcada como `failed` con el resumen de detención.
+
+El flujo CLI no requiere login ni la API y mantiene el comportamiento histórico:
+
+```bash
+pnpm --filter @hardware-scrapping/scraper scrape:ram
+```
 
 ## Flujo de datos
 
@@ -208,7 +257,7 @@ de backend.
 - Solo existe la categoría RAM.
 - La detección de stock todavía usa el valor definido por Fase 1.
 - Los rangos de specs se filtran en memoria por el volumen actual de datos.
-- No hay UI web para administración ni tareas programadas; el admin actual es
-  una API protegida de solo lectura.
+- No hay tareas programadas: cron fue descartado. El admin web dispara corridas
+  manuales y muestra su progreso.
 - La versión de Next usada por el scaffold es `15.2.4`; revisar avisos de
   seguridad antes de desplegar a producción.

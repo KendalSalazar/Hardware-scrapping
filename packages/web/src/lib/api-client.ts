@@ -1,10 +1,17 @@
 import type {
+  AdminStatsDto,
   ApiErrorBody,
   CategoriesResponse,
   CategoryFiltersResponse,
+  LoginRequestDto,
+  LoginResponseDto,
   ProductDetailDto,
   ProductListResponseDto,
+  ScrapeRunDto,
+  ScrapeRunListResponseDto,
+  StartScrapeResponseDto,
 } from '@/types/api';
+import { getToken } from './auth-storage';
 import { getApiBaseUrl } from './search-params';
 
 export class ApiClientError extends Error {
@@ -19,14 +26,23 @@ export class ApiClientError extends Error {
   }
 }
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+type ApiFetchOptions = RequestInit & { auth?: boolean };
+
+async function apiFetch<T>(path: string, init?: ApiFetchOptions): Promise<T> {
   const url = `${getApiBaseUrl()}${path.startsWith('/') ? path : `/${path}`}`;
+  const headers = new Headers(init?.headers);
+  headers.set('Accept', 'application/json');
+
+  if (init?.auth) {
+    const token = getToken();
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const requestInit: RequestInit = { ...init };
+  delete (requestInit as ApiFetchOptions).auth;
   const response = await fetch(url, {
-    ...init,
-    headers: {
-      Accept: 'application/json',
-      ...(init?.headers ?? {}),
-    },
+    ...requestInit,
+    headers,
     cache: 'no-store',
   });
 
@@ -63,4 +79,41 @@ export function fetchProducts(queryString: string): Promise<ProductListResponseD
 
 export function fetchProductById(id: number): Promise<ProductDetailDto> {
   return apiFetch<ProductDetailDto>(`/api/products/${id}`);
+}
+
+export function loginRequest(body: LoginRequestDto): Promise<LoginResponseDto> {
+  return apiFetch<LoginResponseDto>('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+export function fetchAdminStats(): Promise<AdminStatsDto> {
+  return apiFetch<AdminStatsDto>('/api/admin/stats', { auth: true });
+}
+
+export function fetchScrapeRuns(query = 'page=1&pageSize=20'): Promise<ScrapeRunListResponseDto> {
+  const normalizedQuery = query.startsWith('?') ? query : `?${query}`;
+  return apiFetch<ScrapeRunListResponseDto>(`/api/admin/scrape-runs${normalizedQuery}`, {
+    auth: true,
+  });
+}
+
+export function fetchScrapeRunById(id: number): Promise<ScrapeRunDto> {
+  return apiFetch<ScrapeRunDto>(`/api/admin/scrape-runs/${id}`, { auth: true });
+}
+
+export function startRamScrape(): Promise<StartScrapeResponseDto> {
+  return apiFetch<StartScrapeResponseDto>('/api/admin/scrapers/run', {
+    method: 'POST',
+    auth: true,
+  });
+}
+
+export function stopRamScrape(id: number): Promise<StartScrapeResponseDto> {
+  return apiFetch<StartScrapeResponseDto>(`/api/admin/scrapers/${id}/stop`, {
+    method: 'POST',
+    auth: true,
+  });
 }

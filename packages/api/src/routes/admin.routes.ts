@@ -6,11 +6,28 @@ import {
   getScrapeRunById,
   listScrapeRuns,
 } from '../services/admin.service.js';
+import { startRamScrape, stopRamScrape } from '../services/scraper-runner.service.js';
 import { validateScrapeRunsQuery } from '../validators/admin-query.validator.js';
 
 export const adminRouter: ExpressRouter = Router();
 
 adminRouter.use(requireAuth, requireAdmin);
+
+adminRouter.post('/scrapers/run', async (_req, res, next) => {
+  try {
+    res.status(202).json(await startRamScrape());
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post('/scrapers/:id/stop', async (req, res, next) => {
+  try {
+    res.status(200).json(await stopRamScrape(Number(req.params.id)));
+  } catch (error) {
+    next(error);
+  }
+});
 
 adminRouter.get('/stats', async (_req, res, next) => {
   try {

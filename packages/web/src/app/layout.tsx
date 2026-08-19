@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 import { SiteHeader } from '@/components/SiteHeader';
 import './globals.css';
 
@@ -12,8 +13,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
       <body>
-        <SiteHeader />
-        <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+        <AuthProvider>
+          <SiteHeader />
+          <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );
